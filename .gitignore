@@ -3,3 +3,11 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+.Python
+pip-wheel-metadata/
+*.egg-info/
