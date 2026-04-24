@@ -11,3 +11,4 @@ ENV/
 .Python
 pip-wheel-metadata/
 *.egg-info/
+data/preprocessed/
