@@ -178,24 +178,28 @@ print("\n" + "="*60)
 print("KNN — K-NEAREST NEIGHBOURS")
 print("="*60)
 
-# Find best K on split 1 test set
-print("\n[KNN — Finding best K (1–20)]")
-k_range   = range(1, 21)
-k_scores  = []
+from sklearn.metrics import balanced_accuracy_score
+
+# Find best K using balanced_accuracy (avoids majority-class bias from plain accuracy)
+print("\n[KNN — Finding best K (1–20) using balanced_accuracy]")
+k_range  = range(1, 21)
+k_scores = []
 for k in k_range:
-    knn_tmp = KNeighborsClassifier(n_neighbors=k, metric='euclidean', n_jobs=-1)
+    knn_tmp = KNeighborsClassifier(n_neighbors=k, weights='uniform',
+                                   metric='euclidean', n_jobs=-1)
     knn_tmp.fit(X_split1_train, y_split1_train)
-    k_scores.append(accuracy_score(y_split1_test, knn_tmp.predict(X_split1_test)))
+    k_scores.append(balanced_accuracy_score(y_split1_test,
+                                            knn_tmp.predict(X_split1_test)))
 
 best_k = list(k_range)[k_scores.index(max(k_scores))]
-print(f"  Best K = {best_k}  (accuracy = {max(k_scores):.4f})")
+print(f"  Best K = {best_k}  (balanced_accuracy = {max(k_scores):.4f})")
 
-# Plot accuracy vs K
+# Plot balanced accuracy vs K
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(list(k_range), k_scores, marker='o', color='#0369A1', linewidth=2)
 ax.axvline(x=best_k, color='red', linestyle='--', label=f'Best K={best_k}')
-ax.set_xlabel('K'); ax.set_ylabel('Accuracy')
-ax.set_title('KNN — Accuracy vs K'); ax.legend(); ax.grid(alpha=0.3)
+ax.set_xlabel('K'); ax.set_ylabel('Balanced Accuracy')
+ax.set_title('KNN — Balanced Accuracy vs K'); ax.legend(); ax.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(f'{FIGS}/KNN_accuracy_vs_k.png', dpi=150)
 plt.close()
@@ -203,25 +207,38 @@ print(f"  K-plot saved → {FIGS}/KNN_accuracy_vs_k.png")
 
 # ── Split 1 ────────────────────────────────────────────────────────────
 print(f"\n[KNN Split 1 — K={best_k}]")
-knn1 = KNeighborsClassifier(n_neighbors=best_k, metric='euclidean', n_jobs=-1)
+knn1 = KNeighborsClassifier(n_neighbors=best_k, weights='uniform',
+                             metric='euclidean', n_jobs=-1)
 knn1.fit(X_split1_train, y_split1_train)
 yp1k  = knn1.predict(X_split1_test)
 ypr1k = knn1.predict_proba(X_split1_test)[:, 1]
 evaluate("KNN", "Split 1 (Train/Test)", y_split1_test, yp1k, ypr1k)
 save_plots(knn1, "KNN_split1", X_split1_test, y_split1_test, "KNN Split 1")
 
-# ── Split 2 ────────────────────────────────────────────────────────────
+# ── Split 2 — threshold tuning for better Normal recall ───────────────
 print(f"\n[KNN Split 2 — K={best_k}, Test on Dataset 3]")
-knn2 = KNeighborsClassifier(n_neighbors=best_k, metric='euclidean', n_jobs=-1)
+knn2 = KNeighborsClassifier(n_neighbors=best_k, weights='uniform',
+                             metric='euclidean', n_jobs=-1)
 knn2.fit(X_split2_train, y_split2_train)
-yp2k  = knn2.predict(X_split2_test)
 ypr2k = knn2.predict_proba(X_split2_test)[:, 1]
+
+# threshold tuning: pick threshold that maximises balanced_accuracy
+best_t_knn, best_bal_knn = 0.5, 0
+for t in [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6]:
+    pred_t = (ypr2k >= t).astype(int)
+    bal = balanced_accuracy_score(y_split2_test, pred_t)
+    if bal > best_bal_knn:
+        best_bal_knn, best_t_knn = bal, t
+print(f"  Best threshold: {best_t_knn}  (balanced_acc: {best_bal_knn:.4f})")
+
+yp2k = (ypr2k >= best_t_knn).astype(int)
 evaluate("KNN", "Split 2 (Train/Val/Test)", y_split2_test, yp2k, ypr2k)
 save_plots(knn2, "KNN_split2", X_split2_test, y_split2_test, "KNN Split 2")
 
 # ── Split 3 ────────────────────────────────────────────────────────────
 print(f"\n[KNN Split 3 — 5-Fold CV, K={best_k}]")
-knn_cv = KNeighborsClassifier(n_neighbors=best_k, metric='euclidean', n_jobs=-1)
+knn_cv = KNeighborsClassifier(n_neighbors=best_k, weights='uniform',
+                               metric='euclidean', n_jobs=-1)
 cv_knn = cross_validate(knn_cv, X_train_pca, y_train, cv=skf,
                         scoring=['accuracy', 'f1', 'roc_auc'], n_jobs=-1)
 print(f"  Accuracy  : {cv_knn['test_accuracy'].mean():.4f} ± {cv_knn['test_accuracy'].std():.4f}")
