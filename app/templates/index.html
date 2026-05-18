@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoidberg 2.0</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --teal: #1d9e75;
+        --teal-light: #e1f5ee;
+        --teal-dark: #0f6e56;
+        --red: #e24b4a;
+        --red-light: #fcebeb;
+        --red-dark: #a32d2d;
+        --amber: #ba7517;
+        --amber-light: #faeeda;
+        --blue: #185fa5;
+        --blue-light: #e6f1fb;
+        --bg: #f7f7f5;
+        --surface: #fff;
+        --border: rgba(0, 0, 0, 0.1);
+        --text: #1a1a1a;
+        --muted: #666;
+        --hint: #999;
+        --mono: "Space Mono", monospace;
+        --sans: "DM Sans", sans-serif;
+        --radius: 12px;
+        --radius-sm: 8px;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      header {
+        background: #0a0a0a;
+        color: white;
+        padding: 1.25rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        font-family: var(--mono);
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--teal);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+      .header-badge {
+        font-family: var(--mono);
+        font-size: 11px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .hero {
+        background: #0a0a0a;
+        color: white;
+        padding: 3rem 2rem 4rem;
+        text-align: center;
+      }
+      .hero h1 {
+        font-family: var(--mono);
+        font-size: clamp(28px, 5vw, 52px);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.1;
+      }
+      .hero h1 span {
+        color: var(--teal);
+      }
+      .hero p {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.5);
+        max-width: 480px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+      }
+      .stats-row {
+        display: flex;
+        gap: 1px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px 20px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .stat strong {
+        display: block;
+        font-size: 18px;
+        color: var(--teal);
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+      .main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      @media (max-width: 700px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+      }
+      .card-label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: var(--teal);
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .card-label::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--teal);
+        border-radius: 50%;
+      }
+      .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius-sm);
+        padding: 2rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--bg);
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .upload-zone:hover,
+      .upload-zone.drag {
+        border-color: var(--teal);
+        background: var(--teal-light);
+      }
+      .upload-icon {
+        font-size: 36px;
+        opacity: 0.4;
+      }
+      .upload-zone p {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .upload-zone small {
+        font-size: 11px;
+        color: var(--hint);
+      }
+      .preview-wrap {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .preview-img {
+        max-height: 200px;
+        max-width: 100%;
+        border-radius: var(--radius-sm);
+        object-fit: contain;
+        background: #000;
+      }
+      .preview-name {
+        font-size: 11px;
+        color: var(--hint);
+        font-family: var(--mono);
+      }
+      .tab-row {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 1rem;
+        background: var(--bg);
+        padding: 4px;
+        border-radius: var(--radius-sm);
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: var(--mono);
+        cursor: pointer;
+        background: transparent;
+        color: var(--muted);
+        transition: all 0.15s;
+      }
+      .tab-btn.active {
+        background: var(--surface);
+        color: var(--teal);
+        font-weight: 700;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .model-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .model-btn {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        cursor: pointer;
+        background: var(--bg);
+        text-align: left;
+        transition: all 0.15s;
+        font-family: var(--sans);
+        width: 100%;
+      }
+      .model-btn:hover {
+        border-color: var(--teal);
+        background: var(--teal-light);
+      }
+      .model-btn.selected {
+        border: 2px solid var(--teal);
+        background: var(--teal-light);
+      }
+      .model-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        display: block;
+        margin-bottom: 2px;
+      }
+      .model-btn.selected .model-name {
+        color: var(--teal-dark);
+      }
+      .model-auc {
+        font-size: 11px;
+        color: var(--hint);
+        font-family: var(--mono);
+      }
+      .model-btn.selected .model-auc {
+        color: var(--teal);
+      }
+      .best-tag {
+        display: inline-block;
+        font-size: 9px;
+        font-family: var(--mono);
+        background: var(--teal);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 999px;
+        margin-left: 4px;
+      }
+      .run-btn {
+        width: 100%;
+        background: var(--teal);
+        color: white;
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: var(--sans);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 1rem;
+      }
+      .run-btn:hover:not(:disabled) {
+        background: var(--teal-dark);
+        transform: translateY(-1px);
+      }
+      .run-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .pipeline-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .pipeline-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 8px 10px;
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+      }
+      .step-num {
+        width: 20px;
+        height: 20px;
+        background: var(--teal);
+        color: white;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: var(--mono);
+      }
+      .result-panel {
+        display: none;
+      }
+      .loading-wrap {
+        text-align: center;
+        padding: 2rem 0;
+      }
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--teal-light);
+        border-top: 3px solid var(--teal);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-steps {
+        list-style: none;
+        text-align: left;
+        max-width: 280px;
+        margin: 0 auto;
+      }
+      .loading-steps li {
+        font-size: 12px;
+        font-family: var(--mono);
+        color: var(--hint);
+        padding: 3px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.3s;
+      }
+      .loading-steps li.active {
+        color: var(--teal);
+      }
+      .loading-steps li.done {
+        color: var(--muted);
+      }
+      .loading-steps li.done::before {
+        content: "✓";
+        color: var(--teal);
+      }
+      .loading-steps li:not(.done):not(.active)::before {
+        content: "○";
+      }
+      .loading-steps li.active::before {
+        content: "▶";
+      }
+      .result-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 1.25rem;
+      }
+      .result-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        flex-shrink: 0;
+      }
+      .result-icon.normal {
+        background: var(--teal-light);
+      }
+      .result-icon.pneumonia {
+        background: var(--red-light);
+      }
+      .result-icon.bacteria {
+        background: var(--amber-light);
+      }
+      .result-icon.virus {
+        background: var(--blue-light);
+      }
+      .result-prediction {
+        font-family: var(--mono);
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .result-prediction.normal {
+        color: var(--teal-dark);
+      }
+      .result-prediction.pneumonia {
+        color: var(--red-dark);
+      }
+      .result-prediction.bacteria {
+        color: var(--amber);
+      }
+      .result-prediction.virus {
+        color: var(--blue);
+      }
+      .result-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .confidence-badge {
+        margin-left: auto;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--mono);
+        flex-shrink: 0;
+      }
+      .confidence-badge.normal {
+        background: var(--teal-light);
+        color: var(--teal-dark);
+      }
+      .confidence-badge.pneumonia {
+        background: var(--red-light);
+        color: var(--red-dark);
+      }
+      .confidence-badge.bacteria {
+        background: var(--amber-light);
+        color: var(--amber);
+      }
+      .confidence-badge.virus {
+        background: var(--blue-light);
+        color: var(--blue);
+      }
+      .bar-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      .bar-label {
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .bar-pct {
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .bar-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--bg);
+        overflow: hidden;
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        width: 0;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .bar-fill.normal {
+        background: var(--teal);
+      }
+      .bar-fill.pneumonia {
+        background: var(--red);
+      }
+      .bar-fill.bacteria {
+        background: var(--amber);
+      }
+      .bar-fill.virus {
+        background: var(--blue);
+      }
+      .reset-btn {
+        width: 100%;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        cursor: pointer;
+        color: var(--muted);
+        transition: all 0.15s;
+        margin-top: 1rem;
+      }
+      .reset-btn:hover {
+        border-color: var(--teal);
+        color: var(--teal);
+      }
+      .error-box {
+        background: var(--red-light);
+        border: 1px solid rgba(226, 75, 74, 0.2);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        font-size: 13px;
+        color: var(--red-dark);
+        display: none;
+        margin-top: 1rem;
+      }
+      footer {
+        text-align: center;
+        padding: 2rem;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--hint);
+        letter-spacing: 0.05em;
+        border-top: 1px solid var(--border);
+        margin-top: 1rem;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .model-section {
+        display: none;
+      }
+      .model-section.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <div class="logo-dot"></div>
+        ZOIDBERG_2.0
+      </div>
+      <span class="header-badge">EPITECH · MSC IT · ML 2026</span>
+    </header>
+    <section class="hero">
+      <h1>Computer Aided<br /><span>Diagnosis</span></h1>
+      <p>
+        Upload a chest X-ray, choose a model, and get an instant prediction
+        using your actual trained ML models running locally.
+      </p>
+      <div class="stats-row">
+        <div class="stat"><strong>5,856</strong>training images</div>
+        <div class="stat"><strong>5</strong>ML models</div>
+        <div class="stat"><strong>87.9%</strong>PCA variance</div>
+        <div class="stat"><strong>0.9952</strong>best ROC-AUC</div>
+        <div class="stat"><strong>97.1%</strong>best accuracy</div>
+      </div>
+    </section>
+    <main class="main">
+      <div style="display: flex; flex-direction: column; gap: 1.25rem">
+        <div class="card">
+          <div class="card-label">Step 1 — Upload X-ray</div>
+          <div
+            class="upload-zone"
+            id="uploadZone"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="
+              event.preventDefault();
+              this.classList.add('drag');
+            "
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDrop(event)"
+          >
+            <div id="uploadPlaceholder">
+              <div class="upload-icon">🩻</div>
+              <p>Click to upload or drag & drop</p>
+              <small>JPG · JPEG · PNG — chest X-ray images</small>
+            </div>
+            <div class="preview-wrap" id="previewWrap">
+              <img class="preview-img" id="previewImg" alt="preview" />
+              <span class="preview-name" id="previewName"></span>
+            </div>
+          </div>
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/*"
+            onchange="handleFile(this.files[0])"
+          />
+        </div>
+        <div class="card">
+          <div class="card-label">Step 2 — Choose model</div>
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="switchTab('binary', this)">
+              Binary
+            </button>
+            <button class="tab-btn" onclick="switchTab('three', this)">
+              3-Class
+            </button>
+          </div>
+          <div class="model-section active" id="tab-binary">
+            <div class="model-grid">
+              <button
+                class="model-btn selected"
+                onclick="selectModel(this, 'Best (MLP)')"
+              >
+                <span class="model-name"
+                  >MLP Neural Net <span class="best-tag">BEST</span></span
+                >
+                <span class="model-auc">ROC-AUC 0.9937</span>
+              </button>
+              <button class="model-btn" onclick="selectModel(this, 'SVM')">
+                <span class="model-name">SVM</span>
+                <span class="model-auc">ROC-AUC 0.9161</span>
+              </button>
+              <button class="model-btn" onclick="selectModel(this, 'KNN')">
+                <span class="model-name">KNN (K=9)</span>
+                <span class="model-auc">ROC-AUC 0.8880</span>
+              </button>
+            </div>
+          </div>
+          <div class="model-section" id="tab-three">
+            <div class="model-grid">
+              <button
+                class="model-btn"
+                onclick="selectModel(this, 'SVM (3-class)')"
+              >
+                <span class="model-name">SVM</span>
+                <span class="model-auc">Acc 0.8151</span>
+              </button>
+              <button
+                class="model-btn"
+                onclick="selectModel(this, 'KNN (3-class)')"
+              >
+                <span class="model-name">KNN</span>
+                <span class="model-auc">Acc 0.7835</span>
+              </button>
+              <button
+                class="model-btn selected"
+                onclick="selectModel(this, 'CNN (3-class)')"
+              >
+                <span class="model-name"
+                  >CNN <span class="best-tag">BEST</span></span
+                >
+                <span class="model-auc">Acc 0.8228</span>
+              </button>
+            </div>
+          </div>
+          <button class="run-btn" id="runBtn" onclick="runAnalysis()" disabled>
+            ▶ Run analysis
+          </button>
+          <div class="error-box" id="errorBox"></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem">
+        <div class="card">
+          <div class="card-label">Preprocessing pipeline</div>
+          <div class="pipeline-steps">
+            <div class="pipeline-step">
+              <span class="step-num">1</span>Grayscale — remove color noise from
+              X-ray
+            </div>
+            <div class="pipeline-step">
+              <span class="step-num">2</span>Resize to 128×128 — standardize
+              image size
+            </div>
+            <div class="pipeline-step">
+              <span class="step-num">3</span>Normalize ÷255 — pixel values to
+              [0,1]
+            </div>
+            <div class="pipeline-step">
+              <span class="step-num">4</span>Flatten — 128×128 → 16,384 values
+            </div>
+            <div class="pipeline-step">
+              <span class="step-num">5</span>StandardScaler — center features at
+              mean=0
+            </div>
+            <div class="pipeline-step">
+              <span class="step-num">6</span>PCA — 16,384 → 100 components
+              (87.88%)
+            </div>
+          </div>
+        </div>
+        <div class="card result-panel" id="resultPanel">
+          <div class="card-label">Step 3 — Result</div>
+          <div id="loadingWrap" class="loading-wrap">
+            <div class="spinner"></div>
+            <ul class="loading-steps">
+              <li id="ls1">Grayscale + resize + normalize</li>
+              <li id="ls2">Flatten to 16,384 features</li>
+              <li id="ls3">StandardScaler transform</li>
+              <li id="ls4">PCA reduction to 100 components</li>
+              <li id="ls5">Running model inference</li>
+              <li id="ls6">Computing confidence scores</li>
+            </ul>
+          </div>
+          <div id="resultContent" style="display: none">
+            <div class="result-header">
+              <div class="result-icon" id="resultIcon"></div>
+              <div>
+                <div class="result-prediction" id="resultPrediction"></div>
+                <div class="result-sub" id="resultSub"></div>
+              </div>
+              <div class="confidence-badge" id="confidenceBadge"></div>
+            </div>
+            <div id="barsSection"></div>
+            <button class="reset-btn" onclick="resetForm()">
+              ↺ Analyze another image
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer>ZOIDBERG 2.0 · EPITECH MSC IT · JEET & TEJU · 2026</footer>
+    <script>
+      let selectedModel = "Best (MLP)";
+      let uploadedFile = null;
+      const STEPS = ["ls1", "ls2", "ls3", "ls4", "ls5", "ls6"];
+      const CLASS_COLORS = {
+        NORMAL: "normal",
+        PNEUMONIA: "pneumonia",
+        BACTERIA: "bacteria",
+        VIRUS: "virus",
+      };
+      const CLASS_ICONS = {
+        NORMAL: "✅",
+        PNEUMONIA: "🫁",
+        BACTERIA: "🦠",
+        VIRUS: "⚠️",
+      };
+
+      function switchTab(tab, btn) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document
+          .querySelectorAll(".model-section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById("tab-" + tab).classList.add("active");
+        const first = document.querySelector("#tab-" + tab + " .model-btn");
+        if (first) {
+          document
+            .querySelectorAll(".model-btn")
+            .forEach((b) => b.classList.remove("selected"));
+          first.classList.add("selected");
+          selectedModel = first.onclick.toString().match(/'([^']+)'\)/)[1];
+        }
+      }
+
+      function selectModel(btn, model) {
+        document
+          .querySelectorAll(".model-btn")
+          .forEach((b) => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedModel = model;
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById("uploadZone").classList.remove("drag");
+        const f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith("image/")) handleFile(f);
+      }
+
+      function handleFile(file) {
+        if (!file) return;
+        uploadedFile = file;
+        const r = new FileReader();
+        r.onload = (e) => {
+          document.getElementById("previewImg").src = e.target.result;
+          document.getElementById("previewName").textContent = file.name;
+          document.getElementById("uploadPlaceholder").style.display = "none";
+          document.getElementById("previewWrap").style.display = "flex";
+          document.getElementById("runBtn").disabled = false;
+          document.getElementById("errorBox").style.display = "none";
+        };
+        r.readAsDataURL(file);
+      }
+
+      async function runAnalysis() {
+        document.getElementById("resultPanel").style.display = "block";
+        document.getElementById("loadingWrap").style.display = "block";
+        document.getElementById("resultContent").style.display = "none";
+        document.getElementById("errorBox").style.display = "none";
+        document.getElementById("runBtn").disabled = true;
+        STEPS.forEach((id) =>
+          document.getElementById(id).classList.remove("active", "done"),
+        );
+        let idx = 0;
+        const iv = setInterval(() => {
+          if (idx > 0) {
+            document.getElementById(STEPS[idx - 1]).classList.remove("active");
+            document.getElementById(STEPS[idx - 1]).classList.add("done");
+          }
+          if (idx < STEPS.length) {
+            document.getElementById(STEPS[idx]).classList.add("active");
+            idx++;
+          }
+        }, 500);
+        try {
+          const fd = new FormData();
+          fd.append("image", uploadedFile);
+          fd.append("model", selectedModel);
+          const res = await fetch("/predict", { method: "POST", body: fd });
+          const result = await res.json();
+          clearInterval(iv);
+          STEPS.forEach((id) => {
+            document.getElementById(id).classList.remove("active");
+            document.getElementById(id).classList.add("done");
+          });
+          if (result.error) throw new Error(result.error);
+          setTimeout(() => showResult(result), 300);
+        } catch (err) {
+          clearInterval(iv);
+          document.getElementById("loadingWrap").style.display = "none";
+          const el = document.getElementById("errorBox");
+          el.style.display = "block";
+          el.textContent = "Error: " + err.message;
+          document.getElementById("runBtn").disabled = false;
+        }
+      }
+
+      function showResult(result) {
+        const cls = CLASS_COLORS[result.prediction] || "normal";
+        const icon = CLASS_ICONS[result.prediction] || "🩻";
+        const conf = Math.max(...Object.values(result.probabilities));
+        document.getElementById("resultIcon").textContent = icon;
+        document.getElementById("resultIcon").className = "result-icon " + cls;
+        document.getElementById("resultPrediction").textContent =
+          result.prediction;
+        document.getElementById("resultPrediction").className =
+          "result-prediction " + cls;
+        document.getElementById("resultSub").textContent =
+          result.model +
+          " · " +
+          (result.type === "3class"
+            ? "3-class prediction"
+            : "binary prediction");
+        document.getElementById("confidenceBadge").textContent =
+          conf.toFixed(1) + "% confidence";
+        document.getElementById("confidenceBadge").className =
+          "confidence-badge " + cls;
+        const bars = document.getElementById("barsSection");
+        bars.innerHTML = "";
+        result.classes.forEach((c) => {
+          const p = result.probabilities[c] || 0;
+          const bc = CLASS_COLORS[c] || "normal";
+          bars.innerHTML += `<div class="bar-row"><span class="bar-label">${c}</span><span class="bar-pct">${p.toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill ${bc}" id="bar-${c}" style="width:0%"></div></div>`;
+        });
+        document.getElementById("loadingWrap").style.display = "none";
+        document.getElementById("resultContent").style.display = "block";
+        setTimeout(
+          () =>
+            result.classes.forEach((c) => {
+              const el = document.getElementById("bar-" + c);
+              if (el) el.style.width = (result.probabilities[c] || 0) + "%";
+            }),
+          100,
+        );
+      }
+
+      function resetForm() {
+        uploadedFile = null;
+        document.getElementById("fileInput").value = "";
+        document.getElementById("uploadPlaceholder").style.display = "block";
+        document.getElementById("previewWrap").style.display = "none";
+        document.getElementById("runBtn").disabled = true;
+        document.getElementById("resultPanel").style.display = "none";
+        document.getElementById("errorBox").style.display = "none";
+      }
+    </script>
+  </body>
+</html>
