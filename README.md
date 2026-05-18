@@ -1,240 +1,150 @@
 # Zoidberg 2.0 — Pneumonia Detection from Chest X-Ray Images
 
-Epitech MSc IT — Machine Learning Project  
-Binary classification: Normal vs Pneumonia
-
----
-
-## Team
-
-| Person | Role | Models |
-|--------|------|--------|
-| Jeet (Person A) | Data + Preprocessing + Models | LR, RF, MLP |
-| Teammate (Person B) | Splits + Models + Report | SVM, KNN, CNN |
+Epitech MSc IT — Machine Learning Project
 
 ---
 
 ## Project Structure
 
 ```
-zoidberg2/
+Zoidberg2.0/
 ├── data/
-│   ├── train/              ← Dataset 1 (5216 images)
-│   ├── val/                ← Dataset 2 (16 images)
-│   ├── test/               ← Dataset 3 (624 images)
-│   └── preprocessed/       ← Cached preprocessed data
+│   ├── train/              ← 5,216 images (NORMAL + PNEUMONIA)
+│   ├── val/                ← 16 images
+│   ├── test/               ← 624 images
+│   └── preprocessed/       ← cached .npy files (scaler + PCA)
 ├── notebooks/
 │   └── zoidberg2_pneumonia.ipynb
 ├── models/
-│   └── best_pipeline.joblib
+│   ├── best_pipeline.joblib
+│   ├── svm_best.joblib
+│   ├── knn_best.joblib
+│   ├── cnn_best.keras
+│   ├── svm3_best.joblib
+│   ├── knn3_best.joblib
+│   └── cnn3_best.keras
 ├── outputs/
-│   └── figures/
-├── requirements.txt
-└── README.md
+│   ├── figures/            ← all plots
+│   ├── synthesis_report.pdf
+│   └── zoidberg2_pneumonia_full.html
+├── run_models.py
+├── run_3class.py
+├── make_report.py
+└── requirements.txt
 ```
 
 ---
 
 ## Setup
 
-### Step 1 — Clone the repo
 ```bash
-git clone <repo-url>
-cd zoidberg2
-```
-
-### Step 2 — Create virtual environment
-```bash
+# Create virtual environment (Python 3.11 required for TensorFlow)
 /opt/homebrew/bin/python3.11 -m venv venv
 source venv/bin/activate
-```
 
-### Step 3 — Install dependencies
-```bash
 pip install -r requirements.txt
 ```
 
-### Step 4 — Open Jupyter
-```bash
-jupyter notebook
-```
+---
+
+## Dataset
+
+| Split | Folder | Normal | Pneumonia | Total |
+|-------|--------|--------|-----------|-------|
+| Train | data/train | 1,341 | 3,875 | 5,216 |
+| Val   | data/val   | 8     | 8         | 16    |
+| Test  | data/test  | 234   | 390       | 624   |
 
 ---
 
-## For Teammate (Person B) — How to Use Preprocessed Data
+## Preprocessing
 
-Jeet already preprocessed all images and saved them to `data/preprocessed/`.  
-You do NOT need to reprocess anything. Just load the cache!
+All images go through:
+1. Grayscale conversion — `.convert('L')`
+2. Resize to 128×128
+3. Flatten to 1D — `.flatten()`
+4. Normalize — divide by 255.0
+5. StandardScaler (fit on train only)
+6. PCA — 100 components, 87.88% variance retained
 
-### Step 1 — Open the notebook
-Go to `notebooks/zoidberg2_pneumonia.ipynb`
-
-### Step 2 — Run Cell 16 (Imports) first
-This loads all libraries and sets dataset paths.
-
-### Step 3 — Add this loading cell and run it
-
-```python
-import numpy as np
-import joblib
-
-CACHE_DIR = '../data/preprocessed'
-
-# Load preprocessed data
-X_train_raw = np.load(f'{CACHE_DIR}/X_train.npy')
-y_train     = np.load(f'{CACHE_DIR}/y_train.npy')
-X_val_raw   = np.load(f'{CACHE_DIR}/X_val.npy')
-y_val       = np.load(f'{CACHE_DIR}/y_val.npy')
-X_test_raw  = np.load(f'{CACHE_DIR}/X_test.npy')
-y_test      = np.load(f'{CACHE_DIR}/y_test.npy')
-
-# Load fitted scaler and PCA
-scaler = joblib.load(f'{CACHE_DIR}/scaler.joblib')
-pca    = joblib.load(f'{CACHE_DIR}/pca.joblib')
-
-# Apply transformations
-X_train_pca = pca.transform(scaler.transform(X_train_raw))
-X_val_pca   = pca.transform(scaler.transform(X_val_raw))
-X_test_pca  = pca.transform(scaler.transform(X_test_raw))
-
-print("Data loaded successfully!")
-print(f"X_train_pca : {X_train_pca.shape}")
-print(f"X_val_pca   : {X_val_pca.shape}")
-print(f"X_test_pca  : {X_test_pca.shape}")
-```
-
-### Expected output
-```
-Data loaded successfully!
-X_train_pca : (5216, 100)
-X_val_pca   : (16, 100)
-X_test_pca  : (624, 100)
-```
-
-### Step 4 — Also load the splits Jeet prepared
-
-```python
-from sklearn.model_selection import train_test_split, StratifiedKFold
-
-# Split 1 — Simple Train/Test
-X_split1_train, X_split1_test, y_split1_train, y_split1_test = train_test_split(
-    X_train_pca, y_train,
-    test_size=0.2,
-    random_state=42,
-    stratify=y_train
-)
-
-# Split 2 — Train/Val/Test (already done by 3 datasets)
-X_split2_train = X_train_pca
-X_split2_val   = X_val_pca
-X_split2_test  = X_test_pca
-y_split2_train = y_train
-y_split2_val   = y_val
-y_split2_test  = y_test
-
-# Split 3 — K-Fold CV
-skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-
-print("All splits ready!")
-```
-
-### Step 5 — Now train your models (SVM and KNN)
-
-Use `X_split1_train`, `X_split2_train`, `skf` for all 3 splits.  
-Use `X_split2_test`, `y_split2_test` for final evaluation.
+CNN uses raw 64×64 grayscale pixels (no PCA).
 
 ---
 
-## What Jeet Already Did (Person A)
+## Models & Results
 
-| Task | Status |
-|------|--------|
-| Project setup + git | Done |
-| EDA — image counts, charts, sample images | Done |
-| Preprocessing — grayscale, resize 128x128, normalize, flatten | Done |
-| StandardScaler + PCA (100 components, 87.88% variance) | Done |
-| Cache saved to data/preprocessed/ | Done |
-| Phase 4 — All 3 splits defined | Done |
-| Logistic Regression (all 3 splits) | Done |
-| Random Forest (all 3 splits) | Done |
-| MLP Neural Network — 80% accuracy (all 3 splits) | Done |
-| Balanced training with image rotation | Done |
-| Best model saved to models/best_pipeline.joblib | Done |
-
----
-
-## Jeet's Results So Far
+### Binary Classification (Normal vs Pneumonia)
 
 | Model | Split | Accuracy | F1 | ROC-AUC |
-|-------|-------|----------|-----|---------|
+|-------|-------|----------|----|---------|
 | Logistic Regression | Split 1 | 0.9598 | 0.9728 | 0.9891 |
 | Logistic Regression | Split 2 | 0.7484 | 0.8310 | 0.8973 |
-| Logistic Regression | Split 3 | 0.9559 | 0.9704 | 0.9871 |
+| Logistic Regression | Split 3 CV | 0.9559 | 0.9704 | 0.9871 |
 | Random Forest | Split 1 | 0.9416 | 0.9617 | 0.9858 |
 | Random Forest | Split 2 | 0.7436 | 0.8287 | 0.9160 |
-| Random Forest | Split 3 | 0.9329 | 0.9562 | 0.9833 |
+| Random Forest | Split 3 CV | 0.9329 | 0.9562 | 0.9833 |
 | MLP Neural Network | Split 1 | 0.9617 | 0.9741 | 0.9937 |
 | MLP Neural Network | Split 2 | 0.7837 | 0.8512 | 0.9032 |
-| MLP Neural Network | Split 3 | 0.9680 | 0.9785 | 0.9928 |
+| MLP Neural Network | Split 3 CV | 0.9680 | 0.9785 | 0.9928 |
+| **SVM (RBF)** | Split 1 | **0.9713** | **0.9805** | **0.9952** |
+| SVM (RBF) | Split 2 | 0.7949 | 0.8562 | 0.9161 |
+| SVM (RBF) | Split 3 CV | 0.9682 | 0.9784 | 0.9952 |
+| KNN (K=9) | Split 1 | 0.9617 | 0.9745 | 0.9809 |
+| KNN (K=9) | Split 2 | 0.7676 | 0.8419 | 0.8741 |
+| KNN (K=9) | Split 3 CV | 0.9515 | 0.9677 | 0.9838 |
+| CNN (thresh=0.7) | Split 2 | 0.8574 | 0.8947 | 0.9499 |
+
+### 3-Class Classification (Normal / Bacteria / Virus)
+
+| Model | Split | Accuracy | Macro F1 |
+|-------|-------|----------|----------|
+| SVM (OvR) | Split 1 | 0.8151 | 0.8108 |
+| SVM (OvR) | Split 2 | 0.6939 | 0.6734 |
+| SVM (OvR) | Split 3 CV | 0.7991 | 0.7938 |
+| KNN (K=18) | Split 1 | 0.7835 | 0.7656 |
+| KNN (K=18) | Split 2 | 0.7019 | 0.6789 |
+| KNN (K=18) | Split 3 CV | 0.7697 | 0.7469 |
+| CNN (softmax) | Split 2 | 0.7228 | 0.7015 |
 
 ---
 
-## What Teammate Needs to Do (Person B)
+## Data Splits
 
-| Task | Status |
-|------|--------|
-| Train SVM — all 3 splits | Todo |
-| Train KNN — all 3 splits | Todo |
-| GridSearchCV tuning on dataset2 | Todo |
-| Final model comparison table | Todo |
-| Merge full notebook | Todo |
-| Export notebook to HTML | Todo |
-| Save best overall model | Todo |
-| Write PDF synthesis report | Todo |
-| CNN bonus | Optional |
-| 3-class prediction bonus | Optional |
+- **Split 1** — 80/20 train/test from Dataset 1 (stratified)
+- **Split 2** — Dataset 1 train, Dataset 2 val, Dataset 3 test (official)
+- **Split 3** — 5-fold StratifiedKFold on Dataset 1
 
 ---
 
-## Metrics to Compute for Each Model
+## Run Scripts
 
-```python
-from sklearn.metrics import (accuracy_score, precision_score,
-                              recall_score, f1_score, roc_auc_score,
-                              confusion_matrix, RocCurveDisplay,
-                              ConfusionMatrixDisplay)
+```bash
+# Train all binary models (SVM, KNN, CNN)
+/opt/homebrew/bin/python3.11 run_models.py
 
-y_pred = model.predict(X_split2_test)
-y_prob = model.predict_proba(X_split2_test)[:,1]
+# Train 3-class models (Normal / Bacteria / Virus)
+/opt/homebrew/bin/python3.11 run_3class.py
 
-print(f"Accuracy  : {accuracy_score(y_split2_test, y_pred):.4f}")
-print(f"Precision : {precision_score(y_split2_test, y_pred):.4f}")
-print(f"Recall    : {recall_score(y_split2_test, y_pred):.4f}")
-print(f"F1        : {f1_score(y_split2_test, y_pred):.4f}")
-print(f"ROC-AUC   : {roc_auc_score(y_split2_test, y_prob):.4f}")
+# Regenerate PDF report
+/opt/homebrew/bin/python3.11 make_report.py
 ```
 
 ---
 
-## How to Use Best Model on New Image
+## Use Best Model on a New Image
 
 ```python
 import joblib
 import numpy as np
 from PIL import Image
 
-# Load saved pipeline
-pipeline = joblib.load('../models/best_pipeline.joblib')
+pipeline = joblib.load('models/best_pipeline.joblib')
 
-# Preprocess new image
-img = Image.open('new_xray.jpg').convert('L')
-img = img.resize((128, 128))
-X_new = np.array(img).flatten() / 255.0
-X_new = X_new.reshape(1, -1)
+img = Image.open('new_xray.jpg').convert('L').resize((128, 128))
+X = np.array(img).flatten() / 255.0
 
-# Predict
-result = pipeline.predict(X_new)[0]
-prob   = pipeline.predict_proba(X_new)[0]
+result = pipeline.predict(X.reshape(1, -1))[0]
+prob   = pipeline.predict_proba(X.reshape(1, -1))[0]
 
 print("PNEUMONIA" if result == 1 else "NORMAL")
 print(f"Confidence: {max(prob):.2%}")
@@ -242,18 +152,10 @@ print(f"Confidence: {max(prob):.2%}")
 
 ---
 
-## Deliverables Checklist
+## Deliverables
 
-- [ ] zoidberg2_pneumonia.ipynb — complete notebook all cells run
-- [ ] zoidberg2_pneumonia.html — exported from notebook
-- [ ] summary.pdf — PDF synthesis report
-- [ ] models/best_pipeline.joblib — saved best model
-- [ ] requirements.txt — all dependencies
-
----
-
-## Export Notebook to HTML
-
-```bash
-jupyter nbconvert --to html notebooks/zoidberg2_pneumonia.ipynb
-```
+- `notebooks/zoidberg2_pneumonia.ipynb` — full notebook, all models, all splits
+- `outputs/zoidberg2_pneumonia_full.html` — exported HTML
+- `outputs/synthesis_report.pdf` — written report
+- `models/` — all saved model files
+- `outputs/figures/` — all plots and confusion matrices

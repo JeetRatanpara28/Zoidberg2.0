@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zoidberg 2.0 - Synthesis Report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; margin: 32px auto; max-width: 940px; padding: 0 20px; color: #1f2937; background: #fff; }
+    h1, h2, h3 { color: #0f2f57; }
+    h1 { margin-bottom: 0.2em; }
+    h2 { margin-top: 1.6em; border-bottom: 1px solid #d9e2ef; padding-bottom: 0.25em; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #d0d7e2; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f3f6fb; }
+    code { background: #f5f7fa; padding: 2px 5px; border-radius: 4px; }
+    ul, ol { padding-left: 1.4em; }
+  </style>
+</head>
+<body>
+<h1>Zoidberg 2.0 - Pneumonia Detection from Chest X-Ray Images</h1>
+<h2>Goals</h2>
+<ul>
+<li>Build a reliable binary classifier for Pneumonia vs Normal chest X-rays.</li>
+<li>Compare a small set of classical models under the same preprocessing steps.</li>
+<li>Keep the best-performing pipeline saved for later use.</li>
+</ul>
+<h2>Tech Stack Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Library</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Image loading &amp; processing</td>
+<td>Pillow, opencv-python</td>
+</tr>
+<tr>
+<td>Data manipulation</td>
+<td>numpy, pandas</td>
+</tr>
+<tr>
+<td>Preprocessing &amp; scaling</td>
+<td>sklearn.preprocessing</td>
+</tr>
+<tr>
+<td>Dimensionality reduction</td>
+<td>sklearn.decomposition.PCA</td>
+</tr>
+<tr>
+<td>ML models</td>
+<td>sklearn (LogisticRegression, RandomForest, SVM, KNN)</td>
+</tr>
+<tr>
+<td>Hyperparameter tuning</td>
+<td>GridSearchCV, RandomizedSearchCV</td>
+</tr>
+<tr>
+<td>Evaluation metrics</td>
+<td>sklearn.metrics</td>
+</tr>
+<tr>
+<td>Visualization</td>
+<td>matplotlib, seaborn</td>
+</tr>
+<tr>
+<td>Model saving</td>
+<td>joblib</td>
+</tr>
+<tr>
+<td>Bonus deep learning</td>
+<td>tensorflow.keras</td>
+</tr>
+<tr>
+<td>Bonus SOM</td>
+<td>minisom</td>
+</tr>
+<tr>
+<td>Notebook &amp; export</td>
+<td>jupyter, nbconvert</td>
+</tr>
+</tbody>
+</table>
+<h2>Dataset and Setup</h2>
+<ul>
+<li>Dataset structure:</li>
+<li>Dataset 1: train (<code>data/train</code>)</li>
+<li>Dataset 2: validation (<code>data/val</code>)</li>
+<li>Dataset 3: test (<code>data/test</code>)</li>
+<li>Classes: <code>NORMAL</code> (0), <code>PNEUMONIA</code> (1)</li>
+<li>Image preprocessing:</li>
+<li>Grayscale conversion</li>
+<li>Resize to 128x128</li>
+<li>Normalize pixel values to [0, 1]</li>
+<li>Flatten for classical ML models</li>
+</ul>
+<h2>Methods</h2>
+<h3>Feature Pipeline</h3>
+<ul>
+<li>Standardization with <code>StandardScaler</code></li>
+<li>Dimensionality reduction with <code>PCA(n_components=100, random_state=42)</code></li>
+</ul>
+<h3>Data Split Strategies</h3>
+<ul>
+<li>Simple train/test split (80/20) from training data</li>
+<li>The provided train/val/test folders</li>
+<li>Stratified 5-fold cross-validation (<code>n_splits=5</code>)</li>
+</ul>
+<h3>Models Evaluated</h3>
+<ul>
+<li>Logistic Regression</li>
+<li>Random Forest</li>
+<li>SVM</li>
+<li>KNN</li>
+<li>MLP Neural Network</li>
+</ul>
+<h3>Hyperparameter Tuning</h3>
+<ul>
+<li>Validation-driven tuning using Dataset 2 via <code>PredefinedSplit</code></li>
+<li>Parameter grids:</li>
+<li>Logistic Regression: <code>C</code>, <code>penalty</code></li>
+<li>Random Forest: <code>n_estimators</code>, <code>max_depth</code></li>
+<li>SVM: <code>C</code>, <code>kernel</code>, <code>gamma</code></li>
+<li>KNN: <code>n_neighbors</code>, <code>weights</code></li>
+</ul>
+<h2>Evaluation Metrics</h2>
+<ul>
+<li>Accuracy</li>
+<li>Precision</li>
+<li>Recall</li>
+<li>F1 score</li>
+<li>ROC-AUC</li>
+<li>ROC curves and confusion matrices</li>
+</ul>
+<h2>Results Summary</h2>
+<ul>
+<li>All baseline and tuned models were evaluated under the same preprocessing setup.</li>
+<li>The notebook includes a comparison table with the main metrics.</li>
+<li>The final choice was made using ROC-AUC, with F1 used as a tiebreaker.</li>
+</ul>
+<h2>Final Output Artifacts</h2>
+<ul>
+<li>Saved model pipeline:</li>
+<li><code>models/best_pipeline.joblib</code></li>
+<li>Notebook HTML export:</li>
+<li><code>outputs/zoidberg2_pneumonia.html</code></li>
+</ul>
+<h2>Conclusions</h2>
+<ul>
+<li>The notebook covers an end-to-end classical ML workflow for pneumonia detection.</li>
+<li>Model selection is reproducible and based on held-out test data.</li>
+<li>The project is in good shape for submission and presentation.</li>
+</ul>
+<h2>Limitations and Next Steps</h2>
+<ul>
+<li>The validation set is very small, so tuning can be noisy.</li>
+<li>The CNN bonus is not included in this run because of environment constraints.</li>
+<li>A few sensible next steps:</li>
+<li>Run CNN in a Python 3.10/3.11 environment with TensorFlow support.</li>
+<li>Add confidence intervals via repeated stratified CV.</li>
+<li>Add class-specific threshold analysis for recall-sensitive screening.</li>
+</ul>
+</body>
+</html>
